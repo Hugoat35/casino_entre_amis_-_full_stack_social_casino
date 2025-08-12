@@ -44,23 +44,29 @@ export const claimDailyBonus = mutation({
     
     const bonusAmount = 200 + (profile.level * 10); // Base bonus + level bonus
     
-    // Update wallet
-    await ctx.db.patch(wallet._id, {
-      balance: wallet.balance + bonusAmount,
-    });
-    
-    // Update profile
-    await ctx.db.patch(profile._id, {
-      lastDailyBonus: Date.now(),
-    });
-    
-    // Record transaction
-    await ctx.db.insert("transactions", {
-      userId,
-      type: "bonus",
-      amount: bonusAmount,
-      description: `Daily bonus (Level ${profile.level})`,
-    });
+    // Atomic updates
+    try {
+      // Update wallet
+      await ctx.db.patch(wallet._id, {
+        balance: wallet.balance + bonusAmount,
+      });
+      
+      // Update profile
+      await ctx.db.patch(profile._id, {
+        lastDailyBonus: Date.now(),
+      });
+      
+      // Record transaction
+      await ctx.db.insert("transactions", {
+        userId,
+        type: "bonus",
+        amount: bonusAmount,
+        description: `Daily bonus (Level ${profile.level})`,
+      });
+    } catch (error) {
+      // If any operation fails, the entire transaction is rolled back
+      throw new Error("Failed to claim daily bonus");
+    }
     
     return bonusAmount;
   },

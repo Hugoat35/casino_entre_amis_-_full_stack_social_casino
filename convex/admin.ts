@@ -2,7 +2,7 @@ import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
-async function requireAdmin(ctx: any) {
+async function requireAdmin(ctx: any): Promise<string> {
   const userId = await getAuthUserId(ctx);
   if (!userId) throw new Error("Not authenticated");
   

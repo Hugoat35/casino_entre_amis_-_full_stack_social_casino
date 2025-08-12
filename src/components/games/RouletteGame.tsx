@@ -36,6 +36,14 @@ export function RouletteGame({ tableId, onBack }: RouletteGameProps) {
       joinTable({ tableId });
     }
   }, [table, currentGame, joinTable, tableId]);
+  
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      setSelectedBets({});
+      setIsSpinning(false);
+    };
+  }, []);
 
   const handlePlaceBet = async (betType: string, betValue: any) => {
     if (!currentGame || currentGame.status !== "betting") {

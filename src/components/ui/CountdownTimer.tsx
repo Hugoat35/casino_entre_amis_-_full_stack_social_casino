@@ -10,6 +10,8 @@ export function CountdownTimer({ endTime, onComplete, format = 'short' }: Countd
   const [timeLeft, setTimeLeft] = useState(0);
 
   useEffect(() => {
+    let interval: NodeJS.Timeout;
+    
     const updateTimer = () => {
       const now = Date.now();
       const remaining = Math.max(0, endTime - now);
@@ -21,7 +23,7 @@ export function CountdownTimer({ endTime, onComplete, format = 'short' }: Countd
     };
 
     updateTimer();
-    const interval = setInterval(updateTimer, 1000);
+    interval = setInterval(updateTimer, 1000);
 
     return () => clearInterval(interval);
   }, [endTime, onComplete]);

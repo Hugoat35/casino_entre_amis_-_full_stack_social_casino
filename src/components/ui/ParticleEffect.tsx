@@ -29,6 +29,8 @@ export function ParticleEffect({
 
   useEffect(() => {
     if (!trigger) return;
+    
+    let animationId: number;
 
     // Create new particles
     const newParticles: Particle[] = [];
@@ -65,14 +67,20 @@ export function ParticleEffect({
           .filter(particle => particle.life > 0);
 
         if (updated.length > 0) {
-          requestAnimationFrame(animate);
+          animationId = requestAnimationFrame(animate);
         }
         
         return updated;
       });
     };
 
-    requestAnimationFrame(animate);
+    animationId = requestAnimationFrame(animate);
+    
+    return () => {
+      if (animationId) {
+        cancelAnimationFrame(animationId);
+      }
+    };
   }, [trigger, origin, count, colors]);
 
   if (particles.length === 0) return null;

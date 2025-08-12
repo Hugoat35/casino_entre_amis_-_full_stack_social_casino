@@ -19,7 +19,20 @@ export function Dashboard() {
   
   // Set user as online when component mounts
   useEffect(() => {
-    setOnlineStatus({ isOnline: true });
+    const setOnline = async () => {
+      try {
+        await setOnlineStatus({ isOnline: true });
+      } catch (error) {
+        console.warn("Failed to set online status:", error);
+      }
+    };
+    
+    setOnline();
+    
+    // Set offline when component unmounts
+    return () => {
+      setOnlineStatus({ isOnline: false }).catch(console.warn);
+    };
   }, [setOnlineStatus]);
   
   if (!currentUser?.profile) return null;

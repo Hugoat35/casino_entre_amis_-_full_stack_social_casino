@@ -4,7 +4,29 @@ import { api } from "../../convex/_generated/api";
 import { toast } from "sonner";
 
 export function AdminPanel() {
+  const currentUser = useQuery(api.users.getCurrentUser);
   const [activeTab, setActiveTab] = useState<"users" | "games" | "tournaments" | "friendbets">("users");
+  
+  // Security check - only show admin panel to actual admins
+  if (!currentUser?.isAdmin) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="card-premium text-center max-w-md">
+          <div className="text-6xl mb-4">🚫</div>
+          <h2 className="text-2xl font-bold text-white mb-4">Accès Refusé</h2>
+          <p className="text-gray-400 mb-6">
+            Vous n'avez pas les permissions nécessaires pour accéder à cette page.
+          </p>
+          <button
+            onClick={() => window.location.reload()}
+            className="btn-premium bg-gray-600 hover:bg-gray-700"
+          >
+            Retour
+          </button>
+        </div>
+      </div>
+    );
+  }
   
   const users = useQuery(api.admin.getAllUsers) || [];
   const games = useQuery(api.admin.getRecentGames) || [];

@@ -11,6 +11,8 @@ export function RouletteWheel({ isSpinning, result, onSpinComplete }: RouletteWh
   const [ballPosition, setBallPosition] = useState(0);
 
   useEffect(() => {
+    let timer: NodeJS.Timeout;
+    
     if (isSpinning && result !== undefined) {
       // Calculate final rotation based on result
       const sectorAngle = 360 / 37; // 37 numbers (0-36)
@@ -19,12 +21,14 @@ export function RouletteWheel({ isSpinning, result, onSpinComplete }: RouletteWh
       setRotation(finalRotation);
       setBallPosition(finalRotation);
 
-      const timer = setTimeout(() => {
+      timer = setTimeout(() => {
         onSpinComplete?.();
       }, 3000);
-
-      return () => clearTimeout(timer);
     }
+    
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
   }, [isSpinning, result, onSpinComplete]);
 
   return (

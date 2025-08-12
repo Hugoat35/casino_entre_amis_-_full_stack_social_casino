@@ -82,6 +82,17 @@ export const placeBet = mutation({
     if (!game) throw new Error("Game not found");
     if (game.status !== "betting") throw new Error("Betting is not open");
     
+    // Check for duplicate bets (idempotence)
+    const existingBet = game.bets.find(bet => 
+      bet.userId === userId && 
+      bet.betType === args.betType && 
+      JSON.stringify(bet.betValue) === JSON.stringify(args.betValue)
+    );
+    
+    if (existingBet) {
+      throw new Error("Bet already placed for this position");
+    }
+    
     const wallet = await ctx.db
       .query("wallets")
       .withIndex("by_user", (q) => q.eq("userId", userId))
@@ -147,9 +158,11 @@ export const spinRoulette = mutation({
     if (!game) throw new Error("Game not found");
     if (game.status !== "betting") throw new Error("Game is not in betting phase");
     
-    // Generate winning number using seeded random
+    // Generate winning number using improved seeded random
     const seed = parseInt(game.seed, 36);
-    const winningNumber = Math.floor((seed * 982451653) % 37);
+    const nonce = game.roundNumber || 1;
+    const combinedSeed = (seed * nonce * 982451653) % 2147483647;
+    const winningNumber = Math.floor((combinedSeed / 2147483647) * 37);
     
     const result = {
       number: winningNumber,
@@ -162,6 +175,7 @@ export const spinRoulette = mutation({
     
     // Calculate winnings for each bet
     const payouts: Record<string, number> = {};
+    let totalPayout = 0;
     
     for (const bet of game.bets) {
       let payout = 0;
@@ -192,10 +206,11 @@ export const spinRoulette = mutation({
       
       if (payout > 0) {
         payouts[bet.userId] = (payouts[bet.userId] || 0) + payout;
+        totalPayout += payout;
       }
     }
     
-    // Update wallets and record winnings
+    // Update wallets and record winnings atomically
     for (const [userId, amount] of Object.entries(payouts)) {
       const wallet = await ctx.db
         .query("wallets")
@@ -221,6 +236,7 @@ export const spinRoulette = mutation({
     await ctx.db.patch(args.gameId, {
       result,
       status: "finished",
+      totalPayout,
     });
     
     // Resolve friend bets for this round

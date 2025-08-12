@@ -2,6 +2,12 @@ import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
+// Admin role validation helper
+async function isAdmin(ctx: any, userId: string): Promise<boolean> {
+  const user = await ctx.db.get(userId);
+  return user?.email === "admin@casino.com";
+}
+
 export const getCurrentUser = query({
   args: {},
   handler: async (ctx) => {
@@ -25,6 +31,7 @@ export const getCurrentUser = query({
       ...user,
       profile,
       wallet,
+      isAdmin: user?.email === "admin@casino.com",
     };
   },
 });
